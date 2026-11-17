@@ -159,4 +159,9 @@ cpp.template.position = function(node, type)
     end
 end
 
+-- Optional Doxygen convention without redundant @class annotations.
+cpp.template.doxygen_no_class = vim.tbl_filter(function(annotation)
+    return annotation[1] ~= i.ClassName
+end, cpp.template.doxygen)
+
 return cpp
