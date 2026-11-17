@@ -21,19 +21,6 @@ local c_function_extractor = function(node)
     local tree = {
         {
             retrieve = "first",
-            node_type = "template_parameter_list",
-            subtree = {
-                {
-                    retrieve = "first",
-                    node_type = "type_parameter_declaration|variadic_type_parameter_declaration",
-                    subtree = {
-                        { retrieve = "all", node_type = "type_identifier", extract = true },
-                    },
-                },
-            },
-        },
-        {
-            retrieve = "first",
             node_type = "function_declarator",
             subtree = {
                 c_params,
@@ -101,13 +88,8 @@ local c_function_extractor = function(node)
         return nil
     end
 
-    if node:type() == "template_declaration" then
-        res.tparam = res.type_identifier
-    end
-
     return {
         [i.Parameter] = res.identifier,
-        [i.Tparam] = res.tparam,
         [i.Return] = has_return_statement(),
     }
 end
@@ -119,7 +101,6 @@ local c_config = {
             "function_definition",
             "declaration",
             "field_declaration",
-            "template_declaration",
         },
         file = { "translation_unit" },
         type = { "type_definition" },
@@ -127,7 +108,7 @@ local c_config = {
 
     data = {
         func = {
-            ["function_declaration|function_definition|declaration|field_declaration|template_declaration"] = {
+            ["function_declaration|function_definition|declaration|field_declaration"] = {
                 ["0"] = {
                     extract = c_function_extractor,
                 },
@@ -157,28 +138,6 @@ local c_config = {
             },
         },
     },
-
-    locator = function(node_info, nodes_to_match)
-        local result = default_locator(node_info, nodes_to_match)
-        if not result then
-            return nil
-        end
-
-        if not node_info.current then
-            return result
-        end
-
-        -- if the function happens to be a function template we want to place
-        -- the annotation before the template statement and extract the
-        -- template parameters names as well
-        if not node_info.current:parent() then
-            return result
-        end
-        if node_info.current:parent():type() == "template_declaration" then
-            return result:parent()
-        end
-        return result
-    end,
 
     template = template:add_default_annotation("doxygen"),
 }
